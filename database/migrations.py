@@ -1,6 +1,11 @@
 """Database initialization and migrations"""
 import sqlite3
 import os
+import sys
+
+# Add parent directory to path so we can import config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from config import DATABASE_PATH
 
 
