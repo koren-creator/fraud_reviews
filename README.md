@@ -100,8 +100,8 @@ fraud_review/
 ## Development Status
 
 ✅ Phase 1: Foundation (database, project structure) - **COMPLETED**
-⏳ Phase 2: Scraping module (in progress)
-⏳ Phase 3: Fraud detection rules (pending)
+✅ Phase 2: Scraping module (URL parser, Playwright scraper) - **COMPLETED**
+⏳ Phase 3: Fraud detection rules (in progress)
 ⏳ Phase 4: Scoring system (pending)
 ⏳ Phase 5: Web interface (pending)
 ⏳ Phase 6: Testing (pending)
