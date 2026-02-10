@@ -101,9 +101,9 @@ fraud_review/
 
 ✅ Phase 1: Foundation (database, project structure) - **COMPLETED**
 ✅ Phase 2: Scraping module (URL parser, Playwright scraper) - **COMPLETED**
-⏳ Phase 3: Fraud detection rules (in progress)
-⏳ Phase 4: Scoring system (pending)
-⏳ Phase 5: Web interface (pending)
+✅ Phase 3: Fraud detection rules (Text Similarity + Timing Analysis) - **COMPLETED**
+✅ Phase 4: Scoring system (weighted 60/40 algorithm) - **COMPLETED**
+⏳ Phase 5: Web interface (in progress)
 ⏳ Phase 6: Testing (pending)
 ⏳ Phase 7: Documentation (pending)
 
