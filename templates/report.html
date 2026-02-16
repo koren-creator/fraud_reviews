@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}דוח תרמית - {{ business.name }}{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="business-header">
+        <h2>{{ business.name }}</h2>
+        {% if business.address %}
+        <p class="business-address">📍 {{ business.address }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Fraud Score Card -->
+    <div class="score-card risk-{{ analysis.risk_level|lower }}">
+        <div class="score-number">{{ analysis.overall_score }}%</div>
+        <div class="score-label">ציון תרמית / Fraud Score</div>
+        <div class="risk-badge">{{ analysis.risk_level }} RISK</div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="summary-section">
+        <h3>📊 סיכום / Summary</h3>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-label">סה"כ ביקורות / Total Reviews</div>
+                <div class="summary-value">{{ total_reviews }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">דירוג ממוצע / Average Rating</div>
+                <div class="summary-value">{{ business.average_rating|round(1) }} ⭐</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">ביקורות חשודות / Flagged Reviews</div>
+                <div class="summary-value">{{ analysis.flagged_reviews_count }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary Reasons -->
+    <div class="reasons-section">
+        <h3>🚩 סיבות עיקריות / Primary Fraud Indicators</h3>
+        <ul class="reasons-list">
+            {% for reason in analysis.reasoning %}
+            <li>{{ reason }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Detailed Breakdown -->
+    <div class="breakdown-section">
+        <h3>📈 פירוט ניקוד / Score Breakdown</h3>
+        <table class="breakdown-table">
+            <thead>
+                <tr>
+                    <th>קטגוריה / Rule</th>
+                    <th>ציון / Score</th>
+                    <th>משקל / Weight</th>
+                    <th>תרומה / Contribution</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule_name, data in analysis.breakdown.items() %}
+                <tr>
+                    <td>{{ rule_name.replace('Rule', '') }}</td>
+                    <td>{{ data.score }}%</td>
+                    <td>{{ (data.weight * 100)|int }}%</td>
+                    <td><strong>{{ data.contribution }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Flagged Items -->
+    {% if analysis.similar_review_pairs and analysis.similar_review_pairs|length > 0 %}
+    <div class="flagged-section">
+        <h3>🔁 ביקורות דומות / Similar Reviews</h3>
+        {% for pair in analysis.similar_review_pairs[:5] %}
+        <div class="review-pair">
+            <div class="pair-header">
+                <strong>דמיון / Similarity: {{ pair.similarity }}%</strong>
+                <span class="reviewers">{{ pair.reviewer1 }} ↔️ {{ pair.reviewer2 }}</span>
+            </div>
+            <div class="review-preview">{{ pair.text1 }}...</div>
+            <div class="review-preview">{{ pair.text2 }}...</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if analysis.timing_clusters and analysis.timing_clusters|length > 0 %}
+    <div class="flagged-section">
+        <h3>⏰ אשכולות זמן / Timing Clusters</h3>
+        {% for cluster in analysis.timing_clusters[:5] %}
+        <div class="cluster-item">
+            <strong>{{ cluster.count }} reviews</strong> posted at {{ cluster.timestamp }}
+            <div class="cluster-reviewers">
+                Reviewers: {{ cluster.reviewers|join(', ') }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="actions">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            ← נתח עסק אחר / Analyze Another Business
+        </a>
+    </div>
+</div>
+{% endblock %}

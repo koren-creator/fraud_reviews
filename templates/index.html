@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <h2>הזן קישור לעסק ב-Google Maps</h2>
+    <h3>Enter Google Maps Business URL</h3>
+
+    {% if error %}
+    <div class="error-message">
+        <strong>❌ Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('analyze') }}">
+        <input
+            type="url"
+            name="url"
+            placeholder="https://www.google.com/maps/place/..."
+            required
+            class="url-input">
+        <button type="submit" class="analyze-btn">
+            נתח ביקורות / Analyze Reviews
+        </button>
+    </form>
+
+    <div class="example">
+        <p><strong>דוגמה / Example:</strong></p>
+        <code>https://www.google.com/maps/place/Business+Name/@31.123,34.123,17z</code>
+    </div>
+
+    <div class="info-box">
+        <h4>🎯 How it works:</h4>
+        <ol>
+            <li>Enter a Google Maps business URL</li>
+            <li>We scrape all reviews using Playwright</li>
+            <li>Analyze with 2 fraud detection rules:
+                <ul>
+                    <li><strong>Text Similarity</strong> - Finds duplicate reviews</li>
+                    <li><strong>Timing Analysis</strong> - Detects review clusters</li>
+                </ul>
+            </li>
+            <li>Get fraud score (0-100%) with detailed report</li>
+        </ol>
+        <p><strong>⏱️ Analysis time:</strong> 2-5 minutes for 50 reviews</p>
+    </div>
+</div>
+{% endblock %}
