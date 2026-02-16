@@ -252,6 +252,17 @@ class GoogleMapsScraper:
             all_clickables = await self.page.query_selector_all('button, div[role="tab"], div[role="button"], span[role="button"], [onclick], [jsaction]')
             logger.info(f"  Found {len(all_clickables)} clickable elements total")
 
+            # Log first 30 element texts for debugging
+            logger.info("  Logging first 30 element texts:")
+            for i in range(min(30, len(all_clickables))):
+                try:
+                    elem = all_clickables[i]
+                    text = await elem.text_content()
+                    text = text.strip()[:100] if text else ""
+                    logger.info(f"    [{i}] '{text}'")
+                except:
+                    pass
+
             for i, elem in enumerate(all_clickables):
                 try:
                     # Get BOTH text_content and inner_text (different methods)
