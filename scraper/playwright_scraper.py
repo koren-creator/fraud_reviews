@@ -70,16 +70,37 @@ class GoogleMapsScraper:
         await self.page.goto(url, wait_until='domcontentloaded', timeout=60000)
         await self._random_delay(3, 5)
 
+        # Take screenshot for debugging
+        await self.page.screenshot(path='debug_after_load.png')
+        logger.info("Screenshot saved: debug_after_load.png")
+
         # Extract business info
         business_data = await self._extract_business_info()
         logger.info(f"Business: {business_data['name']}")
 
-        # Click "Reviews" tab if it exists
+        # Try multiple approaches to get to reviews section
+        logger.info("Attempting to navigate to reviews section...")
+
+        # Method 1: Click Reviews tab
+        reviews_visible = False
         try:
-            await self._click_reviews_tab()
-            await self._random_delay(2, 3)
+            clicked = await self._click_reviews_tab()
+            if clicked:
+                await self._random_delay(2, 3)
+                await self.page.screenshot(path='debug_after_click.png')
+                logger.info("✓ Clicked Reviews tab, screenshot saved")
+                reviews_visible = True
         except Exception as e:
-            logger.warning(f"Could not click reviews tab: {e}")
+            logger.warning(f"Method 1 failed: {e}")
+
+        # Method 2: Try scrolling down to find reviews
+        if not reviews_visible:
+            logger.info("Trying to scroll to find reviews...")
+            try:
+                await self.page.evaluate('window.scrollTo(0, 800)')
+                await self._random_delay(1, 2)
+            except Exception as e:
+                logger.warning(f"Scroll failed: {e}")
 
         # Sort by "Newest" (more reliable for fraud detection)
         try:
@@ -160,26 +181,43 @@ class GoogleMapsScraper:
 
         return business_data
 
-    async def _click_reviews_tab(self):
-        """Click the Reviews tab to show reviews"""
-        # Try to find and click "Reviews" button
+    async def _click_reviews_tab(self) -> bool:
+        """
+        Click the Reviews tab to show reviews
+        Returns True if successfully clicked, False otherwise
+        """
+        # Try to find and click "Reviews" button (English + Hebrew)
         review_button_selectors = [
             'button[aria-label*="Reviews"]',
+            'button[aria-label*="ביקורות"]',  # Hebrew
             'button:has-text("Reviews")',
+            'button:has-text("ביקורות")',  # Hebrew
             'button.hh2c6',
+            'button[jsaction*="review"]',
+            'div[role="tab"]:has-text("Reviews")',
+            'div[role="tab"]:has-text("ביקורות")',  # Hebrew
         ]
 
+        logger.info("Searching for Reviews button...")
         for selector in review_button_selectors:
             try:
-                button = await self.page.query_selector(selector)
-                if button:
+                elements = await self.page.query_selector_all(selector)
+                logger.info(f"  Selector '{selector}': found {len(elements)} elements")
+
+                if len(elements) > 0:
+                    button = elements[0]
+                    text = await button.text_content()
+                    logger.info(f"  Button text: '{text}'")
+
                     await button.click()
-                    logger.info("Clicked Reviews tab")
-                    return
-            except:
+                    logger.info(f"✓ Clicked Reviews tab using '{selector}'")
+                    return True
+            except Exception as e:
+                logger.debug(f"  Selector '{selector}' failed: {e}")
                 continue
 
-        logger.warning("Could not find Reviews tab")
+        logger.warning("✗ Could not find Reviews tab button")
+        return False
 
     async def _sort_by_newest(self):
         """Sort reviews by newest"""
@@ -212,29 +250,57 @@ class GoogleMapsScraper:
             'div.m6QErb.DxyBCb.kA9KIf.dS8AEf',  # 2026 selector
             'div[role="feed"]',
             'div.review-dialog-list',
+            'div[class*="scrollable"]',
+            'div[aria-label*="Reviews"]',
+            'div[aria-label*="ביקורות"]',  # Hebrew
         ]
 
         reviews_container = None
+        logger.info("Searching for reviews container...")
         for selector in reviews_container_selectors:
             try:
                 reviews_container = await self.page.wait_for_selector(selector, timeout=10000)
                 if reviews_container:
-                    logger.info(f"Found reviews container: {selector}")
+                    logger.info(f"✓ Found reviews container: {selector}")
                     break
-            except:
+            except Exception as e:
+                logger.debug(f"  Selector '{selector}' not found")
                 continue
 
         if not reviews_container:
-            logger.error("Could not find reviews container")
+            logger.error("✗ Could not find reviews container. Taking debug screenshot.")
+            await self.page.screenshot(path='debug_no_container.png')
             return reviews
 
         last_count = 0
         no_new_reviews_count = 0
         max_scrolls = 100  # Safety limit
 
+        # Try multiple selectors for individual review elements
+        review_element_selectors = [
+            'div.jftiEf',  # Old selector
+            'div.fontBodyMedium',
+            'div[data-review-id]',
+            'div[jslog*="review"]',
+            'div.MyEned',  # Possible new selector
+        ]
+
+        working_selector = None
+        for selector in review_element_selectors:
+            test_elements = await reviews_container.query_selector_all(selector)
+            if len(test_elements) > 0:
+                working_selector = selector
+                logger.info(f"✓ Using review element selector: '{selector}' ({len(test_elements)} found)")
+                break
+
+        if not working_selector:
+            logger.error("✗ Could not find review element selector")
+            await self.page.screenshot(path='debug_no_reviews.png')
+            return reviews
+
         for scroll_iteration in range(max_scrolls):
-            # Get all review elements
-            review_elements = await reviews_container.query_selector_all('div.jftiEf')
+            # Get all review elements with the working selector
+            review_elements = await reviews_container.query_selector_all(working_selector)
 
             logger.info(f"Scroll {scroll_iteration + 1}: Found {len(review_elements)} review elements")
 
