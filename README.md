@@ -54,8 +54,10 @@ Then visit: `http://localhost:5000`
 ### Analyze a Business
 
 1. Enter a Google Maps business URL
-2. Wait for scraping and analysis (2-10 minutes depending on review count)
+2. Wait for scraping and analysis (2-3 minutes, scrapes up to 100 reviews)
 3. View fraud detection report with score and detailed reasoning
+
+**Note**: The system analyzes up to 100 most recent reviews per business for optimal performance. This is typically sufficient for fraud detection patterns.
 
 ### Example URL Format
 

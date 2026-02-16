@@ -2,10 +2,16 @@
 import asyncio
 import random
 import re
+import sys
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from playwright.async_api import async_playwright, Page, Browser
 import logging
+
+# Add parent directory to path to import config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import MAX_REVIEWS_TO_SCRAPE
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -309,6 +315,11 @@ class GoogleMapsScraper:
                 review_data = await self._extract_review_data(elem)
                 if review_data:
                     reviews.append(review_data)
+
+                # Check if we've reached the maximum limit
+                if len(reviews) >= MAX_REVIEWS_TO_SCRAPE:
+                    logger.info(f"✓ Reached maximum review limit ({MAX_REVIEWS_TO_SCRAPE}), stopping")
+                    return reviews
 
             # Check if new reviews loaded
             current_count = len(review_elements)

@@ -14,6 +14,7 @@ DEBUG = True
 # Scraping settings
 SCRAPING_DELAY_MIN = 2  # Minimum delay in seconds
 SCRAPING_DELAY_MAX = 5  # Maximum delay in seconds
+MAX_REVIEWS_TO_SCRAPE = 100  # Maximum number of reviews to scrape per business (for performance)
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 # Cache settings
