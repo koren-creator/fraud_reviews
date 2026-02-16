@@ -192,16 +192,29 @@ class GoogleMapsScraper:
         Click the Reviews tab to show reviews
         Returns True if successfully clicked, False otherwise
         """
-        # Try to find and click "Reviews" button (English + Hebrew)
+        # Try to find and click "Reviews" button/tab (English + Hebrew)
+        # Note: May be button, div, or other element
         review_button_selectors = [
+            # Specific aria-labels
             'button[aria-label*="Reviews"]',
             'button[aria-label*="ביקורות"]',  # Hebrew
-            'button:has-text("Reviews")',
+            # Role=tab with text (most reliable)
+            '[role="tab"]:has-text("ביקורות")',  # Hebrew reviews tab
+            '[role="tab"]:has-text("Reviews")',  # English reviews tab
+            # has-text for buttons
             'button:has-text("ביקורות")',  # Hebrew
+            'button:has-text("Reviews")',  # English
+            # Generic tab buttons
             'button.hh2c6',
             'button[jsaction*="review"]',
+            # Clickable divs
             'div[role="tab"]:has-text("Reviews")',
-            'div[role="tab"]:has-text("ביקורות")',  # Hebrew
+            'div[role="tab"]:has-text("ביקורות")',
+            # Tab containers
+            'div.RWPxGd button',
+            'button[data-tab-index]',
+            # Try ANY element with reviews text (last resort)
+            '*:has-text("ביקורות")',
         ]
 
         logger.info("Searching for Reviews button...")
