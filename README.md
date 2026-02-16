@@ -87,15 +87,19 @@ fraud_review/
 └── static/                    # CSS, JS, images
 ```
 
-## Fraud Detection Rules
+## Fraud Detection Rules (POC)
 
-1. **Text Similarity** (25% weight) - Detects duplicate/copied reviews
-2. **AI-Generated Text** (20% weight) - Identifies bot-generated content
-3. **Rating Distribution** (15% weight) - Flags unnatural rating patterns
-4. **Reviewer Profiles** (15% weight) - Detects suspicious accounts
-5. **Timing Analysis** (15% weight) - Finds review clusters posted simultaneously
-6. **Review Bursts** (10% weight) - Detects sudden spikes in reviews
-7. **Emoji Density** (5% weight) - Flags excessive emoji usage
+Currently implemented (2 rules):
+
+1. **Text Similarity** (60% weight) - Detects duplicate/copied reviews using Levenshtein distance
+2. **Timing Analysis** (40% weight) - Finds review clusters posted simultaneously
+
+Future rules (planned):
+- AI-Generated Text - Identifies bot-generated content
+- Rating Distribution - Flags unnatural rating patterns
+- Reviewer Profiles - Detects suspicious accounts
+- Review Bursts - Detects sudden spikes in reviews
+- Emoji Density - Flags excessive emoji usage
 
 ## Development Status
 
@@ -103,9 +107,25 @@ fraud_review/
 ✅ Phase 2: Scraping module (URL parser, Playwright scraper) - **COMPLETED**
 ✅ Phase 3: Fraud detection rules (Text Similarity + Timing Analysis) - **COMPLETED**
 ✅ Phase 4: Scoring system (weighted 60/40 algorithm) - **COMPLETED**
-⏳ Phase 5: Web interface (in progress)
-⏳ Phase 6: Testing (pending)
+✅ Phase 5: Web interface (Flask app, HTML templates, CSS) - **COMPLETED**
+⏳ Phase 6: Testing (in progress)
 ⏳ Phase 7: Documentation (pending)
+
+## Testing
+
+Before first use, install the Playwright browser:
+
+```bash
+python -m playwright install chromium
+```
+
+Then start the Flask app:
+
+```bash
+python app.py
+```
+
+Visit [http://localhost:5000](http://localhost:5000) and enter a Google Maps business URL to analyze.
 
 ## License
 
