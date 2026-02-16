@@ -52,13 +52,32 @@ def analyze():
 
     # Scrape reviews
     try:
+        print(f"\n=== STARTING SCRAPE ===")
+        print(f"URL: {final_url}")
         scraper = GoogleMapsScraper(headless=True)
         result = asyncio.run(scrape_and_analyze(scraper, final_url))
+
+        # VALIDATION: Check if scraping actually worked
+        if not result:
+            return render_template('index.html', error="Scraping failed: No data returned")
+
+        if 'reviews' not in result or len(result['reviews']) == 0:
+            error_msg = f"No reviews found. Business data: {result.get('business', {}).get('name', 'Unknown')}"
+            print(f"ERROR: {error_msg}")
+            return render_template('index.html', error=error_msg)
+
+        print(f"✓ Scraped {len(result['reviews'])} reviews successfully")
+        print(f"✓ Business: {result['business']['name']}")
+
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"ERROR during scraping:\n{error_details}")
         return render_template('index.html', error=f"Error scraping reviews: {str(e)}")
 
     # Save to database
     try:
+        print(f"\n=== SAVING TO DATABASE ===")
         business_data = result['business']
         business_data['url'] = final_url
         business_id = save_business(conn, business_data)
@@ -201,6 +220,78 @@ async def scrape_and_analyze(scraper, url):
         return result
     finally:
         await scraper.close()
+
+
+@app.route('/qa/test-scraper', methods=['GET', 'POST'])
+def qa_test_scraper():
+    """QA endpoint to test scraper directly"""
+    if request.method == 'GET':
+        return '''
+        <html dir="rtl">
+        <head><title>QA: Test Scraper</title></head>
+        <body style="font-family: Arial; padding: 20px;">
+            <h1>🔧 QA: Test Scraper</h1>
+            <form method="POST">
+                <input type="text" name="url" placeholder="Google Maps URL" style="width: 500px; padding: 10px;">
+                <button type="submit" style="padding: 10px 20px;">Test Scrape</button>
+            </form>
+        </body>
+        </html>
+        '''
+
+    url = request.form.get('url', '').strip()
+    if not url:
+        return "Error: No URL provided", 400
+
+    try:
+        from scraper.url_parser import parse_google_maps_url
+        parsed = parse_google_maps_url(url)
+
+        output = []
+        output.append("<html><body style='font-family: monospace; padding: 20px;'>")
+        output.append("<h2>QA Test Results</h2>")
+        output.append(f"<p><strong>Original URL:</strong> {url}</p>")
+        output.append(f"<p><strong>Parsed valid:</strong> {parsed['is_valid']}</p>")
+        output.append(f"<p><strong>Final URL:</strong> {parsed['final_url']}</p>")
+        output.append(f"<p><strong>Business name:</strong> {parsed.get('business_name', 'N/A')}</p>")
+
+        if not parsed['is_valid']:
+            output.append("<p style='color: red;'><strong>ERROR: Invalid URL</strong></p>")
+            output.append("</body></html>")
+            return ''.join(output)
+
+        output.append("<hr><h3>Starting scraper...</h3>")
+        output.append("<pre>")
+
+        scraper = GoogleMapsScraper(headless=True)
+        result = asyncio.run(scrape_and_analyze(scraper, parsed['final_url']))
+
+        output.append(f"Business Name: {result['business']['name']}\n")
+        output.append(f"Total Reviews: {result['business'].get('total_reviews', 0)}\n")
+        output.append(f"Average Rating: {result['business'].get('average_rating', 0)}\n")
+        output.append(f"\nReviews Scraped: {len(result['reviews'])}\n\n")
+
+        if len(result['reviews']) > 0:
+            output.append("First 3 reviews:\n")
+            for i, review in enumerate(result['reviews'][:3], 1):
+                output.append(f"\nReview {i}:\n")
+                output.append(f"  Reviewer: {review['reviewer_name']}\n")
+                output.append(f"  Rating: {review['rating']}\n")
+                output.append(f"  Date: {review['timestamp']}\n")
+                output.append(f"  Text: {review['text'][:100]}...\n")
+        else:
+            output.append("<span style='color: red;'>WARNING: No reviews found!</span>\n")
+
+        output.append("</pre>")
+        output.append("<p style='color: green;'><strong>✓ Test completed</strong></p>")
+        output.append("</body></html>")
+
+        return ''.join(output)
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        return f"<html><body style='font-family: monospace; padding: 20px;'><h2 style='color: red;'>Error</h2><pre>{error_details}</pre></body></html>"
 
 
 if __name__ == '__main__':
