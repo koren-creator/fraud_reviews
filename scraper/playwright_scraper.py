@@ -210,14 +210,24 @@ class GoogleMapsScraper:
                 elements = await self.page.query_selector_all(selector)
                 logger.info(f"  Selector '{selector}': found {len(elements)} elements")
 
-                if len(elements) > 0:
-                    button = elements[0]
-                    text = await button.text_content()
-                    logger.info(f"  Button text: '{text}'")
+                # Check ALL matching elements, not just the first one
+                for i, button in enumerate(elements):
+                    try:
+                        text = await button.text_content()
+                        text = text.strip().lower() if text else ""
+                        logger.info(f"    Element {i}: text = '{text}'")
 
-                    await button.click()
-                    logger.info(f"✓ Clicked Reviews tab using '{selector}'")
-                    return True
+                        # Only click if text contains "review" or Hebrew "ביקורות"
+                        if 'review' in text or 'ביקורות' in text:
+                            await button.click()
+                            logger.info(f"✓ Clicked Reviews tab using '{selector}' (text: '{text}')")
+                            return True
+                        else:
+                            logger.debug(f"    Skipping (not a reviews button)")
+                    except Exception as e:
+                        logger.debug(f"    Element {i} error: {e}")
+                        continue
+
             except Exception as e:
                 logger.debug(f"  Selector '{selector}' failed: {e}")
                 continue

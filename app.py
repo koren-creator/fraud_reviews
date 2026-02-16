@@ -64,7 +64,13 @@ def analyze():
         if 'reviews' not in result or len(result['reviews']) == 0:
             error_msg = f"No reviews found. Business data: {result.get('business', {}).get('name', 'Unknown')}"
             print(f"ERROR: {error_msg}")
-            return render_template('index.html', error=error_msg)
+            print(f"DEBUG: Result keys: {result.keys()}")
+            print(f"DEBUG: Business data: {result.get('business', {})}")
+
+            # Save debug screenshots to help diagnose
+            print(f"DEBUG: Check debug_*.png screenshots in the fraud_review folder")
+
+            return render_template('index.html', error=error_msg + " - Check console logs and debug screenshots for details")
 
         print(f"✓ Scraped {len(result['reviews'])} reviews successfully")
         print(f"✓ Business: {result['business']['name']}")
