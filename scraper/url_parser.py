@@ -36,6 +36,21 @@ def parse_google_maps_url(url: str) -> Dict:
     if not url or not isinstance(url, str):
         return result
 
+    # Clean up URL - remove duplicate protocols
+    url = url.strip()
+    # Fix double protocol issues (http://https:// or https://http://)
+    if url.startswith('http://https://'):
+        url = url.replace('http://https://', 'https://')
+    elif url.startswith('https://http://'):
+        url = url.replace('https://http://', 'https://')
+    elif url.startswith('http://http://'):
+        url = url.replace('http://http://', 'http://')
+    elif url.startswith('https://https://'):
+        url = url.replace('https://https://', 'https://')
+
+    # Update final_url with cleaned URL
+    result['final_url'] = url
+
     # Check if it's a Google Maps URL
     if not is_google_maps_url(url):
         return result
