@@ -136,6 +136,53 @@ def report(business_id):
 
     conn.close()
 
+    # Reconstruct breakdown dict for template
+    from fraud_detection.scoring import FraudScorer
+    scorer = FraudScorer()
+
+    analysis['breakdown'] = {}
+    analysis['reasoning'] = []
+
+    # Reconstruct breakdown for each rule
+    if analysis.get('text_similarity_score', 0) > 0:
+        weight = scorer.WEIGHTS.get('TextSimilarityRule', 0)
+        score = analysis['text_similarity_score']
+        analysis['breakdown']['TextSimilarityRule'] = {
+            'score': score,
+            'weight': weight,
+            'contribution': round(score * weight, 1),
+            'reasoning': 'Text similarity analysis'
+        }
+        if score > 10:
+            analysis['reasoning'].append(f"Text Similarity: {score:.1f}% of reviews are similar")
+
+    if analysis.get('timing_burst_score', 0) > 0:
+        weight = scorer.WEIGHTS.get('TimingAnalysisRule', 0)
+        score = analysis['timing_burst_score']
+        analysis['breakdown']['TimingAnalysisRule'] = {
+            'score': score,
+            'weight': weight,
+            'contribution': round(score * weight, 1),
+            'reasoning': 'Timing cluster analysis'
+        }
+        if score > 10:
+            analysis['reasoning'].append(f"Timing Clusters: {score:.1f}% of reviews in suspicious clusters")
+
+    # Add overall_score and risk_level if not already present
+    if 'overall_score' not in analysis:
+        analysis['overall_score'] = analysis.get('fraud_score', 0)
+
+    if 'risk_level' not in analysis:
+        score = analysis['overall_score']
+        if score >= 75:
+            analysis['risk_level'] = 'HIGH'
+        elif score >= 50:
+            analysis['risk_level'] = 'MEDIUM'
+        elif score >= 25:
+            analysis['risk_level'] = 'LOW'
+        else:
+            analysis['risk_level'] = 'MINIMAL'
+
     # Prepare data for template
     return render_template(
         'report.html',
