@@ -245,7 +245,37 @@ class GoogleMapsScraper:
                 logger.debug(f"  Selector '{selector}' failed: {e}")
                 continue
 
-        logger.warning("✗ Could not find Reviews tab button")
+        # FALLBACK: Get ALL clickable elements and check manually
+        logger.info("Trying fallback: checking ALL clickable elements...")
+        try:
+            # Get all buttons, divs, spans that might be clickable
+            all_clickables = await self.page.query_selector_all('button, div[role="tab"], div[role="button"], span[role="button"], [onclick], [jsaction]')
+            logger.info(f"  Found {len(all_clickables)} clickable elements total")
+
+            for i, elem in enumerate(all_clickables):
+                try:
+                    # Get BOTH text_content and inner_text (different methods)
+                    text_content = await elem.text_content()
+                    inner_text = await elem.inner_text() if elem else ""
+
+                    # Clean up both texts
+                    text_content = text_content.strip() if text_content else ""
+                    inner_text = inner_text.strip() if inner_text else ""
+
+                    # Check both versions (don't lowercase Hebrew!)
+                    if ('ביקורות' in text_content or 'ביקורות' in inner_text or
+                        'review' in text_content.lower() or 'review' in inner_text.lower()):
+                        logger.info(f"  ✓ FOUND IT! Element {i}: text_content='{text_content[:50]}', inner_text='{inner_text[:50]}'")
+                        await elem.click()
+                        logger.info(f"✓ Clicked Reviews tab using fallback method")
+                        return True
+                except:
+                    continue
+
+        except Exception as e:
+            logger.error(f"Fallback method error: {e}")
+
+        logger.warning("✗ Could not find Reviews tab button even with fallback")
         return False
 
     async def _sort_by_newest(self):
