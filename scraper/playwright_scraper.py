@@ -87,6 +87,10 @@ class GoogleMapsScraper:
         # Try multiple approaches to get to reviews section
         logger.info("Attempting to navigate to reviews section...")
 
+        # WAIT for page to fully load including dynamic content
+        logger.info("Waiting for page to fully load (5 seconds)...")
+        await asyncio.sleep(5)  # Give dynamic content time to load
+
         # Method 1: Click Reviews tab
         reviews_visible = False
         try:
@@ -252,16 +256,24 @@ class GoogleMapsScraper:
             all_clickables = await self.page.query_selector_all('button, div[role="tab"], div[role="button"], span[role="button"], [onclick], [jsaction]')
             logger.info(f"  Found {len(all_clickables)} clickable elements total")
 
-            # Log first 30 element texts for debugging
-            logger.info("  Logging first 30 element texts:")
-            for i in range(min(30, len(all_clickables))):
+            # Log ALL element texts that contain Hebrew characters
+            logger.info("  Logging ALL elements with Hebrew text:")
+            hebrew_count = 0
+            for i, elem in enumerate(all_clickables):
                 try:
-                    elem = all_clickables[i]
                     text = await elem.text_content()
                     text = text.strip()[:100] if text else ""
-                    logger.info(f"    [{i}] '{text}'")
+                    # Check if contains Hebrew characters
+                    has_hebrew = any('\u0590' <= c <= '\u05FF' for c in text)
+                    if has_hebrew and text:
+                        logger.info(f"    [{i}] '{text}'")
+                        hebrew_count += 1
+                        # Stop after 50 to avoid spam
+                        if hebrew_count >= 50:
+                            break
                 except:
                     pass
+            logger.info(f"  Found {hebrew_count} elements with Hebrew text")
 
             for i, elem in enumerate(all_clickables):
                 try:
